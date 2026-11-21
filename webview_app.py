@@ -21,6 +21,7 @@ import time
 import traceback
 import urllib.error
 import urllib.request
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -193,8 +194,13 @@ class Api:
     @guarded
     def open_release_page(self) -> dict[str, Any]:
         """用系统默认浏览器打开 GitHub Releases 页面。"""
-        webview.open_external(UPDATE_PAGE)
-        return {"ok": True, "message": "已打开更新日志页面"}
+        try:
+            opened = webbrowser.open(UPDATE_PAGE, new=2)
+        except Exception:  # noqa: BLE001
+            opened = False
+        if not opened:
+            return {"ok": False, "message": "无法自动打开浏览器，请手动访问 GitHub 仓库的 Releases 页面", "kind": "error"}
+        return {"ok": True, "message": "已在浏览器中打开更新日志"}
 
     @guarded
     def open_external_url(self, url: str) -> dict[str, Any]:
@@ -203,8 +209,13 @@ class Api:
         prefix = f"https://github.com/{UPDATE_REPO}/"
         if not target.startswith(prefix):
             return {"ok": False, "message": "链接无效", "kind": "error"}
-        webview.open_external(target)
-        return {"ok": True, "message": "已在浏览器中打开"}
+        try:
+            opened = webbrowser.open(target, new=2)
+        except Exception:  # noqa: BLE001
+            opened = False
+        if not opened:
+            return {"ok": False, "message": "无法自动打开浏览器，请在 GitHub 仓库手动下载", "kind": "error"}
+        return {"ok": True, "message": "已在浏览器中打开下载页"}
 
     @guarded
     def add_item(
