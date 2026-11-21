@@ -1250,7 +1250,7 @@ function openAboutDialog() {
         <div class="about-actions">
           <button class="btn btn-sm btn-primary" type="button" data-action="check-update" id="btn-check-update">检查更新</button>
           <button class="btn btn-sm" type="button" data-action="download-update" id="btn-download-update" disabled>下载更新</button>
-          <button class="btn btn-sm" type="button" data-action="view-changelog" id="btn-view-changelog" disabled>查看更新日志</button>
+          <button class="btn btn-sm" type="button" data-action="view-changelog" id="btn-view-changelog">查看更新日志</button>
         </div>
         <p class="about-footer">数据只保存在本地 · <a href="#" data-action="view-changelog">在 GitHub 上查看源码</a></p>
       </div>
@@ -1670,7 +1670,7 @@ modalLayer.addEventListener('click', async (event) => {
       const downloadBtn = $('#btn-download-update', modalLayer);
       const changelogBtn = $('#btn-view-changelog', modalLayer);
       if (downloadBtn) downloadBtn.disabled = !result.hasUpdate;
-      if (changelogBtn) changelogBtn.disabled = !result.latestVersion;
+      if (changelogBtn) changelogBtn.disabled = false;
     } catch (error) {
       showToast(String(error.message || error), 'error');
     } finally {
@@ -1684,7 +1684,8 @@ modalLayer.addEventListener('click', async (event) => {
   if (event.target.closest('[data-action="download-update"]')) {
     if (!updateInfo?.downloadUrl) return;
     try {
-      await call('open_external_url', updateInfo.downloadUrl);
+      const result = await call('open_external_url', updateInfo.downloadUrl);
+      showToast(result.message || (result.ok ? '已打开下载页' : '打开失败'), result.ok ? 'success' : 'error');
     } catch (error) {
       showToast(String(error.message || error), 'error');
     }
@@ -1693,7 +1694,8 @@ modalLayer.addEventListener('click', async (event) => {
   if (event.target.closest('[data-action="view-changelog"]')) {
     event.preventDefault();
     try {
-      await call('open_release_page');
+      const result = await call('open_release_page');
+      showToast(result.message || (result.ok ? '已打开更新日志' : '打开失败'), result.ok ? 'success' : 'error');
     } catch (error) {
       showToast(String(error.message || error), 'error');
     }
