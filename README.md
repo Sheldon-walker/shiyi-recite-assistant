@@ -8,7 +8,7 @@
 
 ![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square&logo=windows)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python)
-![Version](https://img.shields.io/badge/version-2.1.0-5E54E8?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.1.0-5E54E8?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-16855F?style=flat-square)
 
 [快速开始](#快速开始) · [功能亮点](#功能亮点) · [AI 解析](#ai-解析与追问) · [界面预览](#界面预览) · [常见问题](#常见问题)
@@ -115,6 +115,8 @@ python webview_app.py --debug
 「今日复习」是首页，只显示**今天及逾期未完成**的任务。勾选「完成」立即保存并从待办移除；同一条内容有多个到期节点时会分别列出。
 
 快捷键：`Ctrl + N` 快速添加 · `Esc` 关闭弹窗 · `F5` 跨天刷新今日任务。
+
+左侧「关于」可以查看当前版本并**检查更新**：它会读取本项目 GitHub Releases（[Sheldon-walker/shiyi-recite-assistant](https://github.com/Sheldon-walker/shiyi-recite-assistant/releases)）的最新版本，与当前版本比较。有新版本时可用「下载更新」直接打开 exe 资源、「查看更新日志」在浏览器打开发布说明；无新版本或网络不通时按钮保持不可用并给出提示。作者发布新版时，只需在该仓库创建一个 Release 并上传打包好的 exe 即可。
 
 ### 3. 随时调整
 

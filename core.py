@@ -29,7 +29,7 @@ from typing import Any
 # 一、常量
 # ------------------------------------------------------------------
 APP_NAME = "拾忆 · 艾宾浩斯背诵助手"
-APP_VERSION = "2.1.0"
+APP_VERSION = "0.1.0"
 
 IS_FROZEN = bool(getattr(sys, "frozen", False))
 

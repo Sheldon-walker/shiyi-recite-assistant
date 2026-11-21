@@ -1202,6 +1202,41 @@ async function openSettingsDialog() {
   });
 }
 
+/* ---------------- 关于 / 检查更新 ---------------- */
+
+// 最近一次检查结果，供「下载更新」「查看更新日志」按钮取用。
+let updateInfo = null;
+
+function versionText(value) {
+  const text = String(value || '').trim();
+  return text ? (text.startsWith('v') ? text : `v${text}`) : '—';
+}
+
+function openAboutDialog() {
+  updateInfo = null;
+  showModal(`
+    <div class="modal small about-modal">
+      <div class="modal-header">
+        <div class="modal-icon">ⓘ</div>
+        <div><h2>关于</h2><p>拾忆 · 艾宾浩斯背诵助手</p></div>
+      </div>
+      <div class="modal-body">
+        <div class="about-panel">
+          <div class="about-versions">
+            <span>当前版本：<b>v${esc(state?.version || '0.1.0')}</b></span>
+            <span>可用版本：<b id="about-latest">—</b></span>
+          </div>
+          <p class="about-hint" id="about-hint">点「检查更新」查看是否有新版本。</p>
+          <div class="about-actions">
+            <button class="btn btn-sm" type="button" data-action="check-update" id="btn-check-update">检查更新</button>
+            <button class="btn btn-sm" type="button" data-action="download-update" id="btn-download-update" disabled>下载更新</button>
+            <button class="btn btn-sm" type="button" data-action="view-changelog" id="btn-view-changelog" disabled>查看更新日志</button>
+          </div>
+        </div>
+      </div>
+    </div>`, { autofocus: false });
+}
+
 /* ---------------- 事件绑定 ---------------- */
 
 // 划选 AI 回复 -> 浮出「追问」按钮（朗读不需要）。
@@ -1293,6 +1328,7 @@ $('#side-nav').addEventListener('click', (event) => {
 
 $('#btn-add').addEventListener('click', openAddDialog);
 $('#btn-settings').addEventListener('click', openSettingsDialog);
+$('#btn-about').addEventListener('click', openAboutDialog);
 
 appearanceSelect.addEventListener('change', async () => {
   appearancePreference = appearanceSelect.value;
@@ -1591,6 +1627,53 @@ modalLayer.addEventListener('click', async (event) => {
   }
   if (event.target.closest('[data-action="close-modal"]')) {
     closeModal();
+    return;
+  }
+  if (event.target.closest('[data-action="check-update"]')) {
+    const button = $('#btn-check-update', modalLayer);
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    button.textContent = '检查中…';
+    try {
+      const result = await call('check_update');
+      if (!result.ok) {
+        showToast(result.message || '检查更新失败', 'error');
+        return;
+      }
+      updateInfo = result;
+      const latestEl = $('#about-latest', modalLayer);
+      if (latestEl) latestEl.textContent = versionText(result.latestVersion);
+      const hint = $('#about-hint', modalLayer);
+      if (hint) hint.textContent = result.message || '';
+      const downloadBtn = $('#btn-download-update', modalLayer);
+      const changelogBtn = $('#btn-view-changelog', modalLayer);
+      if (downloadBtn) downloadBtn.disabled = !result.hasUpdate;
+      if (changelogBtn) changelogBtn.disabled = !result.latestVersion;
+    } catch (error) {
+      showToast(String(error.message || error), 'error');
+    } finally {
+      if (document.body.contains(button)) {
+        button.disabled = false;
+        button.textContent = '检查更新';
+      }
+    }
+    return;
+  }
+  if (event.target.closest('[data-action="download-update"]')) {
+    if (!updateInfo?.downloadUrl) return;
+    try {
+      await call('open_external_url', updateInfo.downloadUrl);
+    } catch (error) {
+      showToast(String(error.message || error), 'error');
+    }
+    return;
+  }
+  if (event.target.closest('[data-action="view-changelog"]')) {
+    try {
+      await call('open_release_page');
+    } catch (error) {
+      showToast(String(error.message || error), 'error');
+    }
     return;
   }
   const confirmDelete = event.target.closest('[data-action="confirm-delete"]');

@@ -15,16 +15,44 @@ Python 侧只暴露一组很薄的 API，所有业务规则仍然由 core.Review
 from __future__ import annotations
 
 import json
+import re
 import sys
 import time
 import traceback
+import urllib.error
+import urllib.request
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import webview
 
 from ai_client import AIError, build_analysis_prompt, call_deepseek, test_connection
-from core import APP_NAME, ICON_FILE, WEB_DIR, ReviewCore
+from core import APP_NAME, APP_VERSION, ICON_FILE, WEB_DIR, ReviewCore
+
+# 更新检查：对接项目的 GitHub Releases。
+UPDATE_REPO = "Sheldon-walker/shiyi-recite-assistant"
+UPDATE_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
+UPDATE_PAGE = f"https://github.com/{UPDATE_REPO}/releases"
+
+
+def version_tuple(text: str) -> tuple[int, ...]:
+    """从 'v0.1.0' 之类的字符串里提取数字版本，用于比较大小。"""
+    nums = re.findall(r"\d+", str(text or ""))
+    return tuple(int(n) for n in nums) if nums else (0,)
+
+
+def fetch_latest_release() -> dict[str, Any]:
+    """读取 GitHub 最新 release；网络异常交给调用方转成中文提示。"""
+    request = urllib.request.Request(
+        UPDATE_API,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "ShiYi-Recite-Assistant",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=12) as response:
+        return json.loads(response.read().decode("utf-8"))
 
 
 def guarded(func):
@@ -101,6 +129,82 @@ class Api:
     @guarded
     def get_state(self) -> dict[str, Any]:
         return {"ok": True, "state": self._core.state()}
+
+    @guarded
+    def get_about_info(self) -> dict[str, Any]:
+        """关于弹窗需要的静态信息，无需联网。"""
+        return {
+            "ok": True,
+            "version": APP_VERSION,
+            "repo": UPDATE_REPO,
+            "releasesUrl": UPDATE_PAGE,
+        }
+
+    @guarded
+    def check_update(self) -> dict[str, Any]:
+        """从 GitHub Releases 读取最新版本，与当前版本比较。"""
+        try:
+            release = fetch_latest_release()
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                return {
+                    "ok": True,
+                    "latestVersion": "",
+                    "hasUpdate": False,
+                    "message": "该仓库暂无发布版本",
+                }
+            return {
+                "ok": False,
+                "message": f"检查更新失败：GitHub 返回 {exc.code}",
+                "kind": "error",
+            }
+        except (urllib.error.URLError, TimeoutError, OSError):
+            return {
+                "ok": False,
+                "message": "网络连接失败，请检查网络后重试",
+                "kind": "error",
+            }
+        except (ValueError, json.JSONDecodeError):
+            return {"ok": False, "message": "更新信息解析失败", "kind": "error"}
+
+        latest = str(release.get("tag_name") or "").strip()
+        has_update = bool(latest) and version_tuple(latest) > version_tuple(APP_VERSION)
+        download_url = ""
+        for asset in release.get("assets") or []:
+            name = str(asset.get("name") or "").lower()
+            if name.endswith(".exe"):
+                download_url = str(asset.get("browser_download_url") or "")
+                break
+
+        return {
+            "ok": True,
+            "latestVersion": latest,
+            "hasUpdate": has_update,
+            "publishedAt": str(release.get("published_at") or "")[:10],
+            "releaseUrl": str(release.get("html_url") or UPDATE_PAGE),
+            "downloadUrl": download_url,
+            "notes": str(release.get("body") or "")[:4000],
+            "message": (
+                f"发现新版本 {latest}" if has_update
+                else (f"当前已是最新版本 {latest}" if latest else "该仓库暂无发布版本")
+            ),
+        }
+
+    @guarded
+    def open_release_page(self) -> dict[str, Any]:
+        """用系统默认浏览器打开 GitHub Releases 页面。"""
+        webview.open_external(UPDATE_PAGE)
+        return {"ok": True, "message": "已打开更新日志页面"}
+
+    @guarded
+    def open_external_url(self, url: str) -> dict[str, Any]:
+        """只放行本项目 GitHub 仓库的链接，避免被当成任意 URL 打开器。"""
+        target = str(url or "").strip()
+        prefix = f"https://github.com/{UPDATE_REPO}/"
+        if not target.startswith(prefix):
+            return {"ok": False, "message": "链接无效", "kind": "error"}
+        webview.open_external(target)
+        return {"ok": True, "message": "已在浏览器中打开"}
 
     @guarded
     def add_item(
