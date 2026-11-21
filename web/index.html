@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>拾忆 · 艾宾浩斯背诵助手</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 左侧栏 -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">忆</div>
+        <div class="brand-text">
+          <strong>拾忆</strong>
+          <span>艾宾浩斯背诵助手</span>
+        </div>
+      </div>
+
+      <div class="side-label">工作台</div>
+      <nav class="side-nav" id="side-nav">
+        <button class="nav-item active" type="button" data-view="today">
+          <span class="nav-icon">◷</span><span>今日复习</span>
+        </button>
+        <button class="nav-item" type="button" data-view="all">
+          <span class="nav-icon">▤</span><span>全部计划</span>
+        </button>
+        <button class="nav-item" type="button" id="btn-settings">
+          <span class="nav-icon">⚙</span><span>设置</span>
+        </button>
+      </nav>
+
+      <div class="side-card" id="side-progress"></div>
+      <div class="side-spacer"></div>
+
+      <div class="appearance-row">
+        <span class="appearance-label"><span class="nav-icon">◐</span> 外观</span>
+        <select id="appearance-select" aria-label="外观">
+          <option value="system">跟随系统</option>
+          <option value="light">浅色</option>
+          <option value="dark">深色</option>
+        </select>
+      </div>
+      <div class="save-status" id="save-status">●  数据已就绪</div>
+      <div class="save-hint">本地 JSON · 与程序同目录</div>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="main-area">
+      <header class="page-header">
+        <div class="page-heading">
+          <h1 id="page-title">今日复习</h1>
+          <p id="page-subtitle">在遗忘发生前，再记一次。</p>
+        </div>
+        <button class="btn btn-primary btn-add" type="button" id="btn-add">＋  添加背诵</button>
+      </header>
+      <section class="content" id="content" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <div class="toast-host" id="toast-host" aria-live="polite"></div>
+  <div class="modal-layer" id="modal-layer" hidden></div>
+  <div class="quote-toolbar" id="quote-toolbar" hidden>
+    <button type="button" data-action="quote-ask">追问</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# WebView2 桌面版运行依赖
+pywebview>=6.2,<7.0
+pythonnet>=3.0.5,<4.0
+# DeepSeek 全家桶 API（OpenAI 兼容接口）
+openai>=3.0,<4.0
+
+# 旧版 customtkinter 界面仍保留在 app.py，如需运行旧版请保留此项。
+customtkinter>=5.2.2,<7.0
