@@ -1212,27 +1212,47 @@ function versionText(value) {
   return text ? (text.startsWith('v') ? text : `v${text}`) : '—';
 }
 
+function setAboutStatus(kind, icon, text) {
+  const card = $('#about-status-card', modalLayer);
+  const ico = $('#about-status-icon', modalLayer);
+  const hint = $('#about-hint', modalLayer);
+  if (card) card.className = `about-status ${kind}`;
+  if (ico) ico.textContent = icon;
+  if (hint) hint.textContent = text;
+}
+
 function openAboutDialog() {
   updateInfo = null;
   showModal(`
     <div class="modal small about-modal">
-      <div class="modal-header">
-        <div class="modal-icon">ⓘ</div>
-        <div><h2>关于</h2><p>拾忆 · 艾宾浩斯背诵助手</p></div>
+      <div class="modal-header about-header">
+        <div class="about-logo">忆</div>
+        <div class="about-brand">
+          <h2>拾忆</h2>
+          <p>艾宾浩斯背诵助手 · 把遗忘曲线装进桌面</p>
+        </div>
       </div>
       <div class="modal-body">
-        <div class="about-panel">
-          <div class="about-versions">
-            <span>当前版本：<b>v${esc(state?.version || '0.1.0')}</b></span>
-            <span>可用版本：<b id="about-latest">—</b></span>
+        <div class="about-version-cards">
+          <div class="version-card">
+            <span class="version-label">当前版本</span>
+            <strong class="version-number">v${esc(state?.version || '0.1.0')}</strong>
           </div>
-          <p class="about-hint" id="about-hint">点「检查更新」查看是否有新版本。</p>
-          <div class="about-actions">
-            <button class="btn btn-sm" type="button" data-action="check-update" id="btn-check-update">检查更新</button>
-            <button class="btn btn-sm" type="button" data-action="download-update" id="btn-download-update" disabled>下载更新</button>
-            <button class="btn btn-sm" type="button" data-action="view-changelog" id="btn-view-changelog" disabled>查看更新日志</button>
+          <div class="version-card">
+            <span class="version-label">可用版本</span>
+            <strong class="version-number" id="about-latest">—</strong>
           </div>
         </div>
+        <div class="about-status idle" id="about-status-card">
+          <span class="status-icon" id="about-status-icon">i</span>
+          <span class="status-text" id="about-hint">点「检查更新」查看是否有新版本。</span>
+        </div>
+        <div class="about-actions">
+          <button class="btn btn-sm btn-primary" type="button" data-action="check-update" id="btn-check-update">检查更新</button>
+          <button class="btn btn-sm" type="button" data-action="download-update" id="btn-download-update" disabled>下载更新</button>
+          <button class="btn btn-sm" type="button" data-action="view-changelog" id="btn-view-changelog" disabled>查看更新日志</button>
+        </div>
+        <p class="about-footer">数据只保存在本地 · <a href="#" data-action="view-changelog">在 GitHub 上查看源码</a></p>
       </div>
     </div>`, { autofocus: false });
 }
@@ -1637,14 +1657,16 @@ modalLayer.addEventListener('click', async (event) => {
     try {
       const result = await call('check_update');
       if (!result.ok) {
+        setAboutStatus('error', '!', result.message || '检查更新失败');
         showToast(result.message || '检查更新失败', 'error');
         return;
       }
       updateInfo = result;
       const latestEl = $('#about-latest', modalLayer);
       if (latestEl) latestEl.textContent = versionText(result.latestVersion);
-      const hint = $('#about-hint', modalLayer);
-      if (hint) hint.textContent = result.message || '';
+      const kind = result.hasUpdate ? 'update' : (result.latestVersion ? 'latest' : 'idle');
+      const icon = result.hasUpdate ? '↑' : (result.latestVersion ? '✓' : 'i');
+      setAboutStatus(kind, icon, result.message || '');
       const downloadBtn = $('#btn-download-update', modalLayer);
       const changelogBtn = $('#btn-view-changelog', modalLayer);
       if (downloadBtn) downloadBtn.disabled = !result.hasUpdate;
@@ -1669,6 +1691,7 @@ modalLayer.addEventListener('click', async (event) => {
     return;
   }
   if (event.target.closest('[data-action="view-changelog"]')) {
+    event.preventDefault();
     try {
       await call('open_release_page');
     } catch (error) {
